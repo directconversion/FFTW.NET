@@ -100,12 +100,44 @@ namespace FFTW.NET
 			}
 		}
 
-		/// <summary>
-		/// Performs a real-to-complex fast fourier transformation.
-		/// </summary>
-		/// <seealso cref="http://www.fftw.org/fftw3_doc/One_002dDimensional-DFTs-of-Real-Data.html#One_002dDimensional-DFTs-of-Real-Data"/>
-		/// <seealso cref="http://www.fftw.org/fftw3_doc/Multi_002dDimensional-DFTs-of-Real-Data.html#Multi_002dDimensional-DFTs-of-Real-Data"/>
-		public static void FFT(IPinnedArray<double> input, IPinnedArray<Complex> output, PlannerFlags plannerFlags = PlannerFlags.Default, int nThreads = 1)
+        public static void FFT(IPinnedArray<double> input, IPinnedArray<double> output, PlannerFlags plannerFlags = PlannerFlags.Default, int nThreads = 1)
+        {
+            if ((plannerFlags & PlannerFlags.Estimate) == PlannerFlags.Estimate)
+            {
+                using (var plan = FftwPlanR2R.Create(input, output, DftDirection.Forwards, plannerFlags, nThreads))
+                {
+                    plan.Execute();
+                    return;
+                }
+            }
+
+            using (var plan = FftwPlanR2R.Create(input, output, DftDirection.Forwards, plannerFlags | PlannerFlags.WisdomOnly, nThreads))
+            {
+                if (plan != null)
+                {
+                    plan.Execute();
+                    return;
+                }
+            }
+
+            /// If with <see cref="PlannerFlags.WisdomOnly"/> no plan can be created
+            /// and <see cref="PlannerFlags.Estimate"/> is not specified, we use
+            /// a different buffer to avoid overwriting the input
+            using (var bufferContainer = _bufferPool.RequestBuffer(input.Length * sizeof(double) + MemoryAlignment))
+            using (var buffer = new AlignedArrayDouble(bufferContainer.Buffer, MemoryAlignment, input.GetSize()))
+            using (var plan = FftwPlanR2R.Create(buffer, output, DftDirection.Forwards, plannerFlags, nThreads))
+            {
+                input.CopyTo(plan.Input);
+                plan.Execute();
+                plan.Output.CopyTo(output, 0, 0, input.Length);
+            }
+        }
+        /// <summary>
+        /// Performs a real-to-complex fast fourier transformation.
+        /// </summary>
+        /// <seealso cref="http://www.fftw.org/fftw3_doc/One_002dDimensional-DFTs-of-Real-Data.html#One_002dDimensional-DFTs-of-Real-Data"/>
+        /// <seealso cref="http://www.fftw.org/fftw3_doc/Multi_002dDimensional-DFTs-of-Real-Data.html#Multi_002dDimensional-DFTs-of-Real-Data"/>
+        public static void FFT(IPinnedArray<double> input, IPinnedArray<Complex> output, PlannerFlags plannerFlags = PlannerFlags.Default, int nThreads = 1)
 		{
 			if ((plannerFlags & PlannerFlags.Estimate) == PlannerFlags.Estimate)
 			{

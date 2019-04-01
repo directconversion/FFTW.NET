@@ -25,7 +25,7 @@ namespace FFTW.NET
 		where T1 : struct
 		where T2 : struct
 	{
-		IntPtr _plan = IntPtr.Zero;
+		protected IntPtr _plan = IntPtr.Zero;
 
 		readonly IPinnedArray<T1> _buffer1;
 		readonly IPinnedArray<T2> _buffer2;

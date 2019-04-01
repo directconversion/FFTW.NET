@@ -10,8 +10,8 @@ License: Microsoft Reciprocal License (MS-RL)
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".g.cs" #>
 <# // ------------------------------------------------------ Code Start ------------------------------------------------------
-const string DllName32 = "libfftw3-3-x86";
-const string DllName64 = "libfftw3-3-x64";
+const string DllName32 = "libfftw3-3-x86.dll";
+const string DllName64 = "libfftw3-3-x64.dll";
 const string CallingConvention = "CallingConvention.Cdecl";
 
 string[] Imports = {
